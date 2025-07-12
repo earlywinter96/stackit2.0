@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h3 class="text-glow mb-4">Notifications</h3>
+  {% for note in notifications %}
+    <div class="neon-card">
+      <p>{{ note.message }}</p>
+      <small>{{ note.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+    </div>
+  {% endfor %}
+{% endblock %}

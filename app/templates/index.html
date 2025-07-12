@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}All Questions - StackIt{% endblock %}
+
+{% block content %}
+<!-- ✅ Logo & Tagline (included once here) -->
+<div class="text-center mb-4">
+</div>
+
+<!-- 🔍 Filter Bar (search + tags) -->
+<div class="neon-card mb-4">
+  <h5 class="text-glow">🔍 Filter Questions</h5>
+  <form method="GET" action="{{ url_for('main.index') }}">
+    <div class="input-group">
+      <input type="text" name="q" class="form-control" placeholder="Search by title or tag..." value="{{ request.args.get('q', '') }}">
+      <button class="btn btn-neon" type="submit">Search</button>
+    </div>
+  </form>
+
+  <!-- 🔖 Quick Tags (if available) -->
+  {% if all_tags %}
+    <div class="mt-3">
+      {% for tag in all_tags %}
+        <a href="{{ url_for('main.index', q=tag.name) }}" class="badge bg-info text-dark me-1">{{ tag.name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+<h2 class="text-glow mb-4">All Questions</h2>
+
+{% if questions %}
+  {% for q in questions %}
+    <div class="neon-card mb-4">
+      <h5>
+        <a href="{{ url_for('main.view_question', question_id=q.id) }}">{{ q.title }}</a>
+      </h5>
+      <p>{{ q.description[:150] | safe }}...</p>
+      <small>By {{ q.author.username }} on {{ q.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+
+      {% set first_answer = q.answers.order_by(Answer.upvotes.desc()).first() %}
+      {% if first_answer %}
+        <div class="mt-2">
+          <strong>Top Answer:</strong>
+          <p>{{ first_answer.content[:100] | safe }}...</p>
+          <small>⬆️ {{ first_answer.upvotes }} | ⬇️ {{ first_answer.downvotes }}</small>
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% else %}
+  <p>No questions have been posted yet.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<!-- ✅ Load Quill CSS and JS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+{% endblock %}

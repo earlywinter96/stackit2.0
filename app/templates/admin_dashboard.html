@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+
+<h2 class="text-glow mb-4">🛡️ Admin Dashboard</h2>
+
+<h4>Users</h4>
+{% for user in users %}
+  <div class="neon-card">
+    <p>{{ user.username }} ({{ user.role }})</p>
+    <p>Email: {{ user.email }}</p>
+  </div>
+{% endfor %}
+
+<h4 class="mt-5">Questions</h4>
+{% for q in questions %}
+  <div class="neon-card">
+    <h5>{{ q.title }}</h5>
+    <p>By {{ q.author.username }} on {{ q.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+    <form method="POST" action="{{ url_for('main.delete_question', question_id=q.id) }}">
+      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+    </form>
+  </div>
+{% endfor %}
+
+<h4 class="mt-5">Answers</h4>
+{% for a in answers %}
+  <div class="neon-card">
+    <p>{{ a.content }}</p>
+    <p>By {{ a.author.username }} on {{ a.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+    <form method="POST" action="{{ url_for('main.delete_answer', answer_id=a.id) }}">
+      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+    </form>
+  </div>
+{% endfor %}
+
+{% endblock %}

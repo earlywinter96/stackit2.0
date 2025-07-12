@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}All Questions - StackIt{% endblock %}
+
+{% block content %}
+<h2 class="text-glow mb-4">All Questions</h2>
+
+{% if questions %}
+  {% for q in questions %}
+    <div class="neon-card">
+      <h5>
+        <a href="{{ url_for('main.view_question', question_id=q.id) }}">{{ q.title }}</a>
+      </h5>
+      <p>{{ q.description[:150] | safe }}...</p>
+      <small>By {{ q.author.username }} on {{ q.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+    </div>
+  {% endfor %}
+{% else %}
+  <p>No questions have been posted yet.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<!-- ✅ Load Quill CSS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<!-- ✅ Load Quill JS -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+{% endblock %}
