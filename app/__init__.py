@@ -5,11 +5,15 @@ from app.models import User, Question, Answer, Tag, Notification
 
 import re
 from markupsafe import Markup
+import tempfile  # ✅ Needed for writable path on Vercel
 
 def create_app():
-    print("✅ Starting create_app()")  # <-- Debug line
+    print("✅ Starting create_app()")
 
-    app = Flask(__name__)
+    # ✅ Fix for Vercel: use /tmp as instance path
+    instance_path = tempfile.gettempdir()
+    app = Flask(__name__, instance_path=instance_path)
+
     app.config.from_object(Config)
     print("✅ Config loaded")
 
@@ -40,11 +44,9 @@ def create_app():
         print("✅ GeminiAI user ensured")
 
     def highlight_mentions(text):
-        import re
-        from markupsafe import Markup
         pattern = r'@(\w+)'
-        return Markup(re.sub(pattern, r'<span class=\"mention\">@\1</span>', text))
-    
+        return Markup(re.sub(pattern, r'<span class="mention">@\1</span>', text))
+
     app.jinja_env.filters['highlight_mentions'] = highlight_mentions
     print("✅ Mention filter registered")
 
