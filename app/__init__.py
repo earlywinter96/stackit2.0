@@ -2,18 +2,14 @@ from flask import Flask
 from config import Config
 from app.extensions import db, login
 from app.models import User, Question, Answer, Tag, Notification
-
-import re
-from markupsafe import Markup
-import tempfile
 from werkzeug.security import generate_password_hash
+from markupsafe import Markup
+import re
 
 def create_app():
     print("✅ Starting create_app()")
 
-    instance_path = tempfile.gettempdir()
-    app = Flask(__name__, instance_path=instance_path)
-
+    app = Flask(__name__)
     app.config.from_object(Config)
     print("✅ Config loaded")
 
@@ -28,8 +24,11 @@ def create_app():
     app.register_blueprint(routes_bp)
     print("✅ Routes registered")
 
-    # ✅ Create GeminiAI user immediately inside app context
     with app.app_context():
+        db.create_all()  # ✅ Create tables if not exist
+        print("✅ Tables created")
+
+        # Ensure GeminiAI user exists
         if not User.query.filter_by(username='GeminiAI').first():
             user = User(
                 username='GeminiAI',
@@ -41,8 +40,9 @@ def create_app():
             db.session.commit()
             print("✅ GeminiAI user created")
         else:
-            print("✅ GeminiAI user already exists")
+            print("✅ GeminiAI already exists")
 
+    # Mention highlighter filter
     def highlight_mentions(text):
         pattern = r'@(\w+)'
         return Markup(re.sub(pattern, r'<span class="mention">@\1</span>', text))
