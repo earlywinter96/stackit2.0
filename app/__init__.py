@@ -5,7 +5,6 @@ from flask_login import LoginManager
 from app.models import User
 import os
 
-
 db = SQLAlchemy()
 migrate = Migrate()
 login = LoginManager()
@@ -17,6 +16,12 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object('config.Config')
     print("✅ Config loaded")
+
+    # ✅ Handle instance folder creation only if writable
+    try:
+        os.makedirs(app.instance_path, exist_ok=True)
+    except OSError:
+        print("⚠️ Skipping instance folder creation (read-only file system)")
 
     # ✅ Initialize extensions
     db.init_app(app)
