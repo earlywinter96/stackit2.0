@@ -1,7 +1,9 @@
 Flask
 Flask-SQLAlchemy
 Flask-Login
+Flask-Migrate        # 🔥 Needed for db.create_all / migration support
 requests
 python-dotenv
 google-generativeai
-psycopg2-binary
+psycopg2-binary      # ✅ PostgreSQL support
+gunicorn             # 🔥 Production-ready server (Vercel needs it)
