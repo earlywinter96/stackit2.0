@@ -27,6 +27,7 @@
 # config.py
 import os
 from dotenv import load_dotenv
+import tempfile  # ✅ Add this
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'))  # ✅ Load from .env
@@ -34,6 +35,6 @@ load_dotenv(os.path.join(basedir, '.env'))  # ✅ Load from .env
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://postgres:Hemant%4096@localhost/stackit_db'
+        'sqlite:///' + os.path.join(tempfile.gettempdir(), 'stackit.db')  # ✅ SQLite for Vercel
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')  # ✅ Load Gemini key
