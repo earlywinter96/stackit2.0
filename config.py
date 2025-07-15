@@ -29,13 +29,19 @@ import os
 from dotenv import load_dotenv
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-load_dotenv(os.path.join(basedir, '.env'))  # ✅ Load from .env
+load_dotenv(os.path.join(basedir, '.env'))
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key')
 
-    # ✅ Use in-memory SQLite to avoid file system issues
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///:memory:'
-
+    # ✅ Use SQLite in-memory or a relative file inside `/tmp`
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # or 'sqlite:////tmp/test.db'
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # ✅ Disable Flask-SQLAlchemy defaults that cause issues
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {"check_same_thread": False}
+    }
+
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
