@@ -1,13 +1,26 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
 from app.extensions import db
 from app.models import User, Question, Answer, Tag, Notification
-import re
+import threading, re
 
 bp = Blueprint('main', __name__)
+
+# ✅ Async Gemini AI answer generator
+def generate_and_save_ai_answer(app, question_id, title, description):
+    from app.gemini import generate_ai_answer
+    with app.app_context():
+        question = Question.query.get(question_id)
+        gemini_user = User.query.filter_by(username='GeminiAI').first()
+        ai_content = generate_ai_answer(title, description)
+
+        if ai_content and gemini_user and question:
+            ai_answer = Answer(content=ai_content, author=gemini_user, question=question)
+            db.session.add(ai_answer)
+            db.session.commit()
 
 @bp.route('/')
 def index():
@@ -26,7 +39,6 @@ def index():
 
     questions = questions.order_by(Question.timestamp.desc()).all()
     return render_template('index.html', questions=questions, all_tags=tags, Answer=Answer)
-
 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -97,48 +109,51 @@ def ask_question():
 
         db.session.add(question)
         db.session.commit()
-        flash('Your question has been posted!')
-        return redirect(url_for('main.index'))
+
+        # ✅ Run AI generation in a background thread with app context
+        threading.Thread(
+            target=generate_and_save_ai_answer,
+            args=(current_app._get_current_object(), question.id, title, description)
+        ).start()
+
+        flash('Your question has been posted! Gemini is generating an answer...')
+        return redirect(url_for('main.view_question', question_id=question.id))
 
     return render_template('ask.html')
-
-@bp.route('/questions')
-def list_questions():
-    questions = Question.query.order_by(Question.timestamp.desc()).all()
-    return render_template('questions.html', questions=questions, Answer=Answer)
 
 @bp.route('/questions/<int:question_id>', methods=['GET', 'POST'])
 def view_question(question_id):
     question = Question.query.get_or_404(question_id)
     answers = question.answers.order_by(Answer.timestamp.desc()).all()
+    ai_pending = not any(ans.author.username == 'GeminiAI' for ans in answers)
 
     if request.method == 'POST':
         content = request.form['content']
         answer = Answer(content=content, author=current_user, question=question)
         db.session.add(answer)
 
+        # Mention notifications
         mentioned_usernames = re.findall(r'@(\w+)', content)
         for uname in mentioned_usernames:
             mentioned_user = User.query.filter_by(username=uname).first()
             if mentioned_user and mentioned_user.id != current_user.id:
-                mention_note = Notification(
+                db.session.add(Notification(
                     message=f"You were mentioned in an answer by @{current_user.username}",
                     recipient=mentioned_user
-                )
-                db.session.add(mention_note)
+                ))
 
-        if current_user.is_authenticated and question.author.id != current_user.id:
-            new_notification = Notification(
+        # Notify question author
+        if current_user.id != question.author.id:
+            db.session.add(Notification(
                 message=f"{current_user.username} answered your question: {question.title}",
                 recipient=question.author
-            )
-            db.session.add(new_notification)
+            ))
 
         db.session.commit()
         flash('Your answer has been posted!')
         return redirect(url_for('main.view_question', question_id=question.id))
 
-    return render_template('view_question.html', question=question, answers=answers)
+    return render_template('view_question.html', question=question, answers=answers, ai_pending=ai_pending)
 
 @bp.route('/answers/<int:answer_id>/accept', methods=['POST'])
 @login_required
@@ -158,24 +173,32 @@ def accept_answer(answer_id):
     flash('Answer accepted successfully.')
     return redirect(url_for('main.view_question', question_id=question.id))
 
-# Admin route protection
 def admin_required(f):
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def wrapped(*args, **kwargs):
         if not current_user.is_authenticated or current_user.role != 'ADMIN':
             flash('Admin access required.')
             return redirect(url_for('main.index'))
         return f(*args, **kwargs)
-    return decorated_function
+    return wrapped
 
 @bp.route('/admin')
 @login_required
 @admin_required
 def admin_dashboard():
-    users = User.query.all()
-    questions = Question.query.order_by(Question.timestamp.desc()).all()
-    answers = Answer.query.order_by(Answer.timestamp.desc()).all()
-    return render_template('admin_dashboard.html', users=users, questions=questions, answers=answers)
+    return render_template('admin_dashboard.html',
+                           users=User.query.all(),
+                           questions=Question.query.order_by(Question.timestamp.desc()).all(),
+                           answers=Answer.query.order_by(Answer.timestamp.desc()).all())
+
+@bp.route('/notifications')
+@login_required
+def notifications():
+    notes = current_user.notifications.order_by(Notification.timestamp.desc()).all()
+    for n in notes:
+        n.is_read = True
+    db.session.commit()
+    return render_template('notifications.html', notifications=notes)
 
 @bp.route('/questions/<int:question_id>/delete', methods=['POST'])
 @login_required
@@ -191,28 +214,15 @@ def delete_question(question_id):
 @login_required
 def vote_answer(answer_id, action):
     answer = Answer.query.get_or_404(answer_id)
-
     if action == 'up':
         answer.upvotes += 1
     elif action == 'down':
         answer.downvotes += 1
     else:
-        flash("Invalid vote action.")
+        flash('Invalid action.')
         return redirect(url_for('main.view_question', question_id=answer.question.id))
-
     db.session.commit()
     return redirect(url_for('main.view_question', question_id=answer.question.id))
-
-@bp.route('/notifications')
-@login_required
-def notifications():
-    notes = current_user.notifications.order_by(Notification.timestamp.desc()).all()
-
-    for n in notes:
-        n.is_read = True
-    db.session.commit()
-
-    return render_template('notifications.html', notifications=notes)
 
 @bp.route('/home')
 def home():

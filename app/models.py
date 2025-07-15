@@ -17,6 +17,7 @@ class UserRole(Enum):
     GUEST = 'guest'
     USER = 'user'
     ADMIN = 'admin'
+    BOT = 'BOT'  # ✅ Add this line
 
 class User(UserMixin, db.Model):
     __tablename__ = 'user'
@@ -80,3 +81,5 @@ class Notification(db.Model):
 
     recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+# in models.py
+role = db.Column(db.Enum(UserRole), default=UserRole.USER)

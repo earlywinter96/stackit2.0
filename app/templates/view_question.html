@@ -16,7 +16,13 @@
   {% endif %}
 </div>
 
-<h4 class="mt-4 text-glow">Answers</h4>
+<h3 class="mt-4">Answers</h3>
+
+{% if ai_pending %}
+  <div class="alert alert-warning mt-2">
+    🤖 Gemini is generating an AI answer. Please check back soon.
+  </div>
+{% endif %}
 
 {% if answers %}
   {% for answer in answers %}
