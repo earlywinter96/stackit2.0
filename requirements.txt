@@ -1,3 +1,6 @@
-flask
-google-generativeai
+Flask
+Flask-Login
+Flask-SQLAlchemy
 requests
+python-dotenv
+google-generativeai
