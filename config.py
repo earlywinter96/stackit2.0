@@ -34,14 +34,17 @@ load_dotenv(os.path.join(basedir, '.env'))
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key')
 
-    # ✅ Use SQLite in-memory or a relative file inside `/tmp`
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # or 'sqlite:////tmp/test.db'
-    
+    # ✅ Replace SQLite with PostgreSQL connection
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        'DATABASE_URL',
+        'postgresql://postgres:Hemant%4096@localhost/stackit_db'
+    )
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # ✅ Disable Flask-SQLAlchemy defaults that cause issues
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "connect_args": {"check_same_thread": False}
-    }
+    # Optional: only needed for SQLite
+    # SQLALCHEMY_ENGINE_OPTIONS = {
+    #     "connect_args": {"check_same_thread": False}
+    # }
 
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
