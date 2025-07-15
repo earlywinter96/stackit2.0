@@ -13,15 +13,17 @@ login.login_message_category = 'info'
 
 def create_app():
     print("✅ Starting create_app()")
-    app = Flask(__name__)
+
+    # ✅ Use a writable temp dir on Vercel to avoid makedirs error
+    if os.environ.get("VERCEL"):
+        instance_path = "/tmp/instance"
+    else:
+        instance_path = None  # Use default
+
+    app = Flask(__name__, instance_path=instance_path)
+
     app.config.from_object('config.Config')
     print("✅ Config loaded")
-
-    # ✅ Handle instance folder creation only if writable
-    try:
-        os.makedirs(app.instance_path, exist_ok=True)
-    except OSError:
-        print("⚠️ Skipping instance folder creation (read-only file system)")
 
     # ✅ Initialize extensions
     db.init_app(app)
@@ -34,8 +36,8 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
 
-    # ✅ Only run this in dev/local environment
-    if not os.environ.get("VERCEL"):  # Only do this locally
+    # ✅ Local-only setup
+    if not os.environ.get("VERCEL"):
         with app.app_context():
             db.create_all()
             if not User.query.filter_by(username='GeminiAI').first():
