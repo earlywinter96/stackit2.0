@@ -5,12 +5,12 @@ from app.models import User, Question, Answer, Tag, Notification
 
 import re
 from markupsafe import Markup
-import tempfile  # ✅ Needed for writable path on Vercel
+import tempfile
+from werkzeug.security import generate_password_hash
 
 def create_app():
     print("✅ Starting create_app()")
 
-    # ✅ Fix for Vercel: use /tmp as instance path
     instance_path = tempfile.gettempdir()
     app = Flask(__name__, instance_path=instance_path)
 
@@ -28,10 +28,8 @@ def create_app():
     app.register_blueprint(routes_bp)
     print("✅ Routes registered")
 
-    @app.before_first_request
-    def ensure_gemini_user():
-        from app.models import User
-        from werkzeug.security import generate_password_hash
+    # ✅ Create GeminiAI user immediately inside app context
+    with app.app_context():
         if not User.query.filter_by(username='GeminiAI').first():
             user = User(
                 username='GeminiAI',
@@ -41,7 +39,9 @@ def create_app():
             )
             db.session.add(user)
             db.session.commit()
-        print("✅ GeminiAI user ensured")
+            print("✅ GeminiAI user created")
+        else:
+            print("✅ GeminiAI user already exists")
 
     def highlight_mentions(text):
         pattern = r'@(\w+)'
