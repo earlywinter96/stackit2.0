@@ -58,6 +58,33 @@
     </style>
   </head>
 
+  <!-- Toast container -->
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 1050;"></div>
+
+  <!-- Flash message handler -->
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <script>
+          {% for message in messages %}
+          showToast("{{ message }}");
+          {% endfor %}
+      </script>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Toast JS -->
+  <script>
+  function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type}`;
+    toast.style.marginBottom = '10px';
+    toast.innerHTML = message;
+    document.getElementById('toast-container').appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+  </script>
+
+
   <body>
     <div class="container-fluid px-3 px-md-4 mt-4">
 

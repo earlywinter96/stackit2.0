@@ -4,7 +4,9 @@ from flask_migrate import Migrate
 import os
 
 migrate = Migrate()
-login.login_view = 'auth.login'
+login.login_view = 'main.login'
+
+from werkzeug.security import generate_password_hash
 
 def create_app():
     print("✅ Starting create_app()")
@@ -31,10 +33,15 @@ def create_app():
 
     # ✅ Always run DB setup (local + Vercel)
     with app.app_context():
-        from app.models import User, Tag  # Make sure Tag is imported
+        from app.models import User, Tag
         db.create_all()
         if not User.query.filter_by(username='GeminiAI').first():
-            bot = User(username='GeminiAI', email='gemini@app.bot', is_bot=True)
+            bot = User(
+                username='GeminiAI',
+                email='gemini@app.bot',
+                password_hash=generate_password_hash('dummy-bot-password'),
+                is_bot=True
+            )
             db.session.add(bot)
             db.session.commit()
         print("✅ DB initialized with GeminiAI user")

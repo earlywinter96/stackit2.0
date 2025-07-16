@@ -37,7 +37,7 @@ class Config:
     # ✅ Replace SQLite with PostgreSQL connection
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL',
-        'postgresql://postgres:Hemant%4096@db.mfxadkejiqagbxkzhdan.supabase.co:5432/postgres'
+        'postgresql://postgres.mfxadkejiqagbxkzhdan:Hemant%4096@aws-0-ap-south-1.pooler.supabase.com:6543/postgres'
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

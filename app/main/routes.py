@@ -195,11 +195,26 @@ def admin_dashboard():
 @bp.route('/notifications')
 @login_required
 def notifications():
-    notes = current_user.notifications.order_by(Notification.timestamp.desc()).all()
-    for n in notes:
-        n.is_read = True
-    db.session.commit()
-    return render_template('notifications.html', notifications=notes)
+    try:
+        # Safely fetch notifications
+        if not hasattr(current_user, "notifications"):
+            flash("Notification system not set up for user.")
+            return render_template('notifications.html', notifications=[])
+
+        notes = current_user.notifications.order_by(Notification.timestamp.desc()).all()
+
+        # Mark all as read
+        for n in notes:
+            n.is_read = True
+        db.session.commit()
+
+        return render_template('notifications.html', notifications=notes)
+
+    except Exception as e:
+        # Log the error (optional: use logging)
+        print(f"Error in /notifications: {e}")
+        flash("Oops! Something went wrong.")
+        return render_template('notifications.html', notifications=[])
 
 @bp.route('/questions/<int:question_id>/delete', methods=['POST'])
 @login_required

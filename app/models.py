@@ -28,12 +28,14 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.Enum(UserRole), default=UserRole.USER)
 
+    # ✅ Add this new field
+    is_bot = db.Column(db.Boolean, default=False)
+
     questions = db.relationship('Question', backref='author', lazy='dynamic')
     answers = db.relationship('Answer', backref='author', lazy='dynamic')
     notifications = db.relationship('Notification', backref='recipient', lazy='dynamic')
 
     def __repr__(self):
-    
         return f'<User {self.username}>'
 
 @login.user_loader
