@@ -29,15 +29,14 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
 
-    # ✅ Setup DB and GeminiAI
-    if not os.environ.get("VERCEL"):
-        with app.app_context():
-            from app.models import User
-            db.create_all()
-            if not User.query.filter_by(username='GeminiAI').first():
-                bot = User(username='GeminiAI', email='gemini@app.bot', is_bot=True)
-                db.session.add(bot)
-                db.session.commit()
-            print("✅ Local DB initialized with GeminiAI user")
+    # ✅ Always run DB setup (local + Vercel)
+    with app.app_context():
+        from app.models import User, Tag  # Make sure Tag is imported
+        db.create_all()
+        if not User.query.filter_by(username='GeminiAI').first():
+            bot = User(username='GeminiAI', email='gemini@app.bot', is_bot=True)
+            db.session.add(bot)
+            db.session.commit()
+        print("✅ DB initialized with GeminiAI user")
 
-    return app  # ✅ Only return this!
+    return app
