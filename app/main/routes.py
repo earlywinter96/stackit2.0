@@ -22,6 +22,7 @@ def generate_and_save_ai_answer(app, question_id, title, description):
             db.session.add(ai_answer)
             db.session.commit()
 
+
 @bp.route('/')
 def index():
     query = request.args.get('q', '').strip().lower()

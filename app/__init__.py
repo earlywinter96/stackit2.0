@@ -1,27 +1,20 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from app.extensions import db, login
 from flask_migrate import Migrate
-from flask_login import LoginManager
-from app.models import User
 import os
 
-db = SQLAlchemy()
 migrate = Migrate()
-login = LoginManager()
 login.login_view = 'auth.login'
-login.login_message_category = 'info'
 
 def create_app():
     print("✅ Starting create_app()")
 
-    # ✅ Use a writable temp dir on Vercel to avoid makedirs error
     if os.environ.get("VERCEL"):
         instance_path = "/tmp/instance"
     else:
-        instance_path = None  # Use default
+        instance_path = None
 
     app = Flask(__name__, instance_path=instance_path)
-
     app.config.from_object('config.Config')
     print("✅ Config loaded")
 
@@ -32,13 +25,14 @@ def create_app():
 
     # ✅ Register blueprints
     from app.auth import bp as auth_bp
-    from app.main import bp as main_bp
+    from app.main.routes import bp as main_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
 
-    # ✅ Local-only setup
+    # ✅ Setup DB and GeminiAI
     if not os.environ.get("VERCEL"):
         with app.app_context():
+            from app.models import User
             db.create_all()
             if not User.query.filter_by(username='GeminiAI').first():
                 bot = User(username='GeminiAI', email='gemini@app.bot', is_bot=True)
@@ -46,4 +40,4 @@ def create_app():
                 db.session.commit()
             print("✅ Local DB initialized with GeminiAI user")
 
-    return app
+    return app  # ✅ Only return this!
